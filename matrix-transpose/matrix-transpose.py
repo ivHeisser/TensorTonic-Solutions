@@ -11,7 +11,7 @@ def matrix_transpose(A):
     rows = len(A)
     cols = len(A[0])
 
-    A_T = np.zeros((cols, rows))  # важно: (cols, rows)
+    A_T = np.zeros((cols, rows)) 
 
     for i in range(rows):
         for j in range(cols):
