@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <math.h>
+#include <cstdio>
 
 __global__ void gelu_kernel(const float* input, float* output, int N) {
     // Write code here
@@ -20,7 +21,6 @@ extern "C" void solve(const float* input, float* output, int N) {
     gelu_kernel<<<blocks, threads>>>(input, output, N);
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
-        #include <cstdio>
         printf("CUDA kernel launch error: %s\n", cudaGetErrorString(err));
     }
     cudaDeviceSynchronize();
