@@ -24,9 +24,9 @@ __global__ void softmax_kernel(const float* input, float* output, int N) {
     float max_val = input[0];
     
     for (unsigned int i = 0; i < N; i++)
-        max_val = fmaxf(max_val, input[i]); // TODO: implement max__val__reduce
+        max_val = fmaxf(max_val, input[i]); // TODO: implement parallel max__val__reduce
     for (unsigned int i = 0; i < N; i++)
-        sum_exp += __expf(input[i] - max_val); // TODO: implement sum__exp__reduce  
+        sum_exp += __expf(input[i] - max_val); // TODO: implement parallel sum__exp__reduce  
     for (unsigned int i = idx; i < N; i += stride)
         output[i] = __expf(input[i] - max_val) / sum_exp;
 }
