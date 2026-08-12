@@ -20,9 +20,9 @@ __global__ void gemv_kernel_optimized(const float* A, const float* x, float* __r
         sum += a.z * b.z;
         sum += a.w * b.w;
     }
-
-    // Tail, for the case if N not divide by 4
-    for (int j = N4 * 4; j < N; ++j) {
+    
+    #pragma unroll 4
+    for (int j = N4 * 4; j < N; ++j) { // Tail (in case N is not a multiple of 4)
         sum += row[j] * x[j];
     }
 
