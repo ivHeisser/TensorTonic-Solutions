@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 
-__global__ void gemv_kernel(const float* __restrict__ A, const float* __restrict__ x, float* __restrict__ y, int M, int N) {
+__global__ void gemv_kernel_v2(const float* __restrict__ A, const float* __restrict__ x, float* __restrict__ y, int M, int N) {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = gridDim.x * blockDim.x;
 
@@ -63,6 +63,8 @@ __global__ void gemv_kernel_v0(const float* A, const float* x, float* y, int M, 
 extern "C" void solve(const float* A, const float* x, float* y, int M, int N) {
     dim3 threads(256); // to increase perf : try 128 / 256 / 512 threads
     dim3 blocks((M + 255) / 256);
-    gemv_kernel<<<blocks, threads>>>(A, x, y, M, N);
+    gemv_kernel_v0<<<blocks, threads>>>(A, x, y, M, N);
+    cudaDeviceSynchronize();
+    gemv_kernel_v2<<<blocks, threads>>>(A, x, y, M, N);
     cudaDeviceSynchronize();
 }
