@@ -1,0 +1,50 @@
+#include <cuda_runtime.h>
+
+__global__ void gemv_kernel_optimized(const float* A, const float* x, float* __restrict__ y, int M, int N) { //optimized version
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= M) return;
+
+    const float* row = A + (size_t)i * N;
+    float sum = 0.0f;
+    int N4 = N / 4;
+
+    const float4* row4 = reinterpret_cast<const float4*>(row);
+    const float4* x4   = reinterpret_cast<const float4*>(x);
+
+    for (int j = 0; j < N4; ++j) {
+        float4 a = row4[j];
+        float4 b = x4[j];
+
+        sum += a.x * b.x;
+        sum += a.y * b.y;
+        sum += a.z * b.z;
+        sum += a.w * b.w;
+    }
+
+    // Tail, for the case if N not divide by 4
+    for (int j = N4 * 4; j < N; ++j) {
+        sum += row[j] * x[j];
+    }
+
+    y[i] = sum;
+}
+
+
+__global__ void gemv_kernel(const float* A, const float* x, float* y, int M, int N) {
+    // Write code here
+    // y[i]= ∑ A[i,j]⋅x[j], row-major
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= M) return;
+    float sum = 0.0f;
+    
+    for(int j = 0; j < N; j++)
+        sum += A[i * N + j] * x[j];
+    y[i] = sum;    
+}
+
+extern "C" void solve(const float* A, const float* x, float* y, int M, int N) {
+    dim3 threads(256);
+    dim3 blocks((M + 255) / 256);
+    gemv_kernel<<<blocks, threads>>>(A, x, y, M, N);
+    cudaDeviceSynchronize();
+}
