@@ -1,6 +1,22 @@
 #include <cuda_runtime.h>
 
-__global__ void gemv_kernel_optimized(const float* A, const float* x, float* __restrict__ y, int M, int N) { //optimized version
+__global__ void gemv_kernel(const float* __restrict__ A, const float* __restrict__ x, float* __restrict__ y, int M, int N) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = gridDim.x * blockDim.x;
+
+    for (int i = tid; i < M; i += stride) {
+        const float* row = A + (size_t)i * N;
+        float sum = 0.0f;
+
+        #pragma unroll 4
+        for (int j = 0; j < N; ++j)
+            sum += row[j] * x[j];
+
+        y[i] = sum;
+    }
+}
+
+__global__ void gemv_kernel_v1(const float* A, const float* x, float* __restrict__ y, int M, int N) { //optimized version
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= M) return;
 
@@ -30,17 +46,19 @@ __global__ void gemv_kernel_optimized(const float* A, const float* x, float* __r
 }
 
 
-__global__ void gemv_kernel(const float* A, const float* x, float* y, int M, int N) {
+__global__ void gemv_kernel_v0(const float* A, const float* x, float* y, int M, int N) {
     // Write code here
     // y[i]= ∑ A[i,j]⋅x[j], row-major
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= M) return;
     float sum = 0.0f;
+    int stride = gridDim.x * blockDim.x;
     
     for(int j = 0; j < N; j++)
         sum += A[i * N + j] * x[j];
     y[i] = sum;    
 }
+
 
 extern "C" void solve(const float* A, const float* x, float* y, int M, int N) {
     dim3 threads(256); // to increase perf : try 128 / 256 / 512 threads
